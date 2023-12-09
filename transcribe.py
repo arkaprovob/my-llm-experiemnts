@@ -1,5 +1,3 @@
-# Source: https://towardsdatascience.com/how-to-auto-generate-a-summary-from-long-youtube-videos-using-ai-a2a542b6698d
-
 import whisper
 from pytube import YouTube
 from transformers import pipeline

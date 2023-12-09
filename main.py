@@ -6,8 +6,8 @@ import logging
 
 logging.basicConfig(filename='demo.log', encoding='utf-8', level=logging.DEBUG)
 
-URL = "https://www.youtube.com/watch?v=tG-1XmWK8ms"
-VIDEO_NAME = "andrew_huberman"
+URL = "https://www.youtube.com/watch?v=jkrNMKz9pWU"
+VIDEO_NAME = "working_of_llm"
 
 saved_to_file = get_text(url=URL, video_name=VIDEO_NAME)
 logging.info(f"Saved to file: {saved_to_file}")
