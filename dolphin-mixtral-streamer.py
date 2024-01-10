@@ -1,0 +1,104 @@
+
+import os
+import torch
+import transformers
+from torch import bfloat16
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer, StoppingCriteria
+import time
+from torch.nn.parallel import DataParallel
+
+
+model_id = "cognitivecomputations/dolphin-2.5-mixtral-8x7b"
+
+PHI_PROMPT = \
+'''
+user: hi!
+assistant: hi! how can i help you today?
+user: {query}
+assistant:
+'''
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
+for i in range(torch.cuda.device_count()):
+    info = torch.cuda.get_device_properties(i)
+    print(f"CUDA:{i} {info.name}, {info.total_memory / 1024 ** 2}MB")
+
+print(f"decie_ids {list(range(torch.cuda.device_count()))}")
+
+device = "auto" #torch.device("cuda" if torch.cuda.is_available() else "cpu") #auto
+trust_remote_code = False
+bnb_config = transformers.BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type='nf4',
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_compute_dtype=bfloat16,
+    load_in_8bit_fp32_cpu_offload=True,
+    load_in_4bit_fp32_cpu_offload=True,
+    llm_int8_enable_fp32_cpu_offload=True,
+    llm_int4_enable_fp32_cpu_offload=True,
+    kwargs={"load_in_8bit_fp32_cpu_offload":True,"load_in_4bit_fp32_cpu_offload":True,
+            "llm_int8_enable_fp32_cpu_offload":True, "llm_int8_enable_fp32_cpu_offload":True}
+)
+
+
+model_config = transformers.AutoConfig.from_pretrained(
+    model_id,
+    trust_remote_code=trust_remote_code,
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    trust_remote_code=trust_remote_code,
+    config=model_config,
+    device_map=device,
+    #load_in_4bit=True,
+    #attn_implementation="flash_attention_2",
+    quantization_config=bnb_config,
+)
+
+
+#model = DataParallel(model, device_ids=[0, 1])
+#model.to(device=device)
+
+
+def generate_text(prompt, llm_model, tokenizer):
+    inputs = tokenizer(prompt, return_tensors="pt")
+    streamer = TextStreamer(tokenizer)
+    input_ids = inputs.input_ids.to(llm_model.device)
+    attention_mask = inputs.attention_mask.to(llm_model.device)
+
+    start_time = time.time()
+    outputs = llm_model.generate(
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        do_sample=True,
+        max_new_tokens=2048,
+        top_k=50,
+        top_p=0.95,
+        temperature=0.9,
+        num_return_sequences=1,
+        no_repeat_ngram_size=3,
+        pad_token_id=tokenizer.eos_token_id,
+        streamer=streamer
+    )
+    end_time = time.time()
+    # Check the type and structure of outputs
+    if not isinstance(outputs, torch.Tensor) or len(outputs.shape) != 2:
+        print("Unexpected output format from the model.")
+        return None
+
+    duration = end_time - start_time
+    num_tokens = outputs.shape[1]  # Assuming outputs is a 2D tensor with shape [num_sequences, num_tokens]
+    tokens_per_second = num_tokens / duration
+    return tokens_per_second
+
+
+while True:
+    user_question = input("Please enter your question: ")
+    if user_question.lower() == 'exit':
+        break
+    prompt = PHI_PROMPT.format(query=user_question)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=False)
+    tps = generate_text(prompt, model, tokenizer)
+    print(f"Token generation speed: {tps} tokens/second")
+

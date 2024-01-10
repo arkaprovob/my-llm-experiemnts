@@ -8,7 +8,7 @@ from chunking import split_text_into_chunks
 from transcribe import OUTPUT_DIR
 
 logging.basicConfig(filename='demo.log', encoding='utf-8', level=logging.DEBUG)
-
+device = "cuda:1"
 bart_params = {
     "max_length": 124,
     "min_length": 30,
@@ -19,7 +19,7 @@ bart_params = {
 
 
 def create_summarizer(model: str) -> Callable:
-    summarizer = pipeline("summarization", model=model)
+    summarizer = pipeline("summarization", model=model, device=device)
     return summarizer
 
 
@@ -47,7 +47,7 @@ def save_summary_to_file(summary: str, file_name: str) -> None:
         logging.error(f"Error saving summary to file: {e}")
 
 
-def generate_summary(text_chunks: List[str], video_name: str) -> None:
+def orchestrate_summarization(text_chunks: List[str], video_name: str) -> None:
     summarizer = create_summarizer("facebook/bart-large-cnn")
     summary = get_summary_bart(text_chunks, summarizer, bart_params)
     print(summary)

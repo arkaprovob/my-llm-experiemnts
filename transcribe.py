@@ -1,12 +1,11 @@
 import whisper
 from pytube import YouTube
-from transformers import pipeline
 import os
-from typing import List
 import logging
 
 logging.basicConfig(filename='demo.log', encoding='utf-8', level=logging.ERROR)
 OUTPUT_DIR = "output"
+device = "cuda:0"
 
 
 def download_audio_from_youtube(url: str, video_name: str) -> str:
@@ -18,10 +17,10 @@ def download_audio_from_youtube(url: str, video_name: str) -> str:
     return os.path.join(OUTPUT_DIR, filename)
 
 
-def load_whisper_model(model_name: str = "large"):
+def load_whisper_model(model_name: str = "large-v3"):
     """Load the medium multilingual Whisper model."""
     print("available models: ", whisper.available_models()) #  ['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 'large-v1', 'large-v2', 'large-v3', 'large']
-    return whisper.load_model(model_name)
+    return whisper.load_model(model_name, device=device)
 
 
 def transcribe_audio_to_text(model, audio_path: str, language: str = "English"):
