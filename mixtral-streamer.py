@@ -31,7 +31,7 @@ dm = {'model.embed_tokens': 0, 'model.layers.0': 0, 'model.layers.1': 0,
       'model.layers.17': 0, 'model.layers.18': 0, 'model.layers.19': 0,
       'model.layers.20': 0, 'model.layers.21': 0, 'model.layers.22': 0,
       'model.layers.23': 0, 'model.layers.24': 0, 'model.layers.25': 0,
-      'model.layers.26': 1, 'model.layers.27': 1, 'model.layers.28': 1,
+      'model.layers.26': 0, 'model.layers.27': 1, 'model.layers.28': 1,
       'model.layers.29': 1, 'model.layers.30': 1, 'model.layers.31': 1,
       'model.layers.32': 1, 'model.layers.33': 1, 'model.layers.34': 1,
       'model.layers.35': 1, 'model.layers.36': 1, 'model.layers.37': 1,
@@ -42,7 +42,7 @@ dm = {'model.embed_tokens': 0, 'model.layers.0': 0, 'model.layers.1': 0,
       'model.layers.50': 1, 'model.layers.51': 1, 'model.layers.52': 1,
       'model.layers.53': 1, 'model.layers.54': 1, 'model.layers.55': 1,
       'model.layers.56': 1, 'model.layers.57': 1, 'model.layers.58': 1,
-      'model.layers.59': 1, 'model.norm': 1, 'lm_head': 1}
+      'model.layers.59': 1, 'model.norm': 1, 'lm_head': 0}
 
 compute_dtype = getattr(torch, "float16")
 bnb_config = BitsAndBytesConfig(
