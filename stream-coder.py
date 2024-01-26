@@ -3,14 +3,17 @@ import os
 import torch
 import transformers
 from torch import bfloat16
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer,StoppingCriteria
-from prompt import SUPPORT_ENGINEER
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer, StoppingCriteria, \
+    StoppingCriteriaList, GenerationConfig
+from prompt import SUPPORT_ENGINEER, SUPPORT_ENGINEER2, SUPPORT_ENGINEER3
 
-model_id = "deepseek-ai/deepseek-coder-6.7b-instruct"
-
+cache_dir = "/media/arko/work/.hfcache"
+# model_id = "upstage/SOLAR-10.7B-Instruct-v1.0"
+# model_id = "Nexusflow/NexusRaven-V2-13B"
+model_id = "deepseek-ai/deepseek-moe-16b-chat"
 
 device = "auto"
-trust_remote_code = False
+trust_remote_code = True
 
 bnb_config = transformers.BitsAndBytesConfig(
     load_in_4bit=True,
@@ -19,10 +22,10 @@ bnb_config = transformers.BitsAndBytesConfig(
     bnb_4bit_compute_dtype=bfloat16
 )
 
-
 model_config = transformers.AutoConfig.from_pretrained(
     model_id,
     trust_remote_code=trust_remote_code,
+    cache_dir=cache_dir
 )
 
 model = AutoModelForCausalLM.from_pretrained(
@@ -31,8 +34,11 @@ model = AutoModelForCausalLM.from_pretrained(
     config=model_config,
     quantization_config=bnb_config,
     device_map=device,
-    torch_dtype=torch.bfloat16
+    torch_dtype=torch.bfloat16,
+    cache_dir=cache_dir
 )
+model.generation_config = GenerationConfig.from_pretrained(model_id, cache_dir=cache_dir)
+model.generation_config.pad_token_id = model.generation_config.eos_token_id
 
 
 def read_file(file_name):
@@ -42,12 +48,8 @@ def read_file(file_name):
 
 
 class DsaiStoppingCriteria(StoppingCriteria):
-    def __init__(self):
-        stop_list = ["<end>", "<｜end▁of▁sentence｜>","end▁of▁sentence","end_of_sentence",
-                     "<｜end_of_sentence｜>","<|end▁of▁sentence|>","<|end_of_sentence|>"
-                     "<｜end▁of▁sentence｜><｜begin▁of▁sentence｜># 100 Days Of Code - Log",
-                     "<｜end▁of▁sentence｜><｜begin▁of▁sentence｜>", "requirements", "<|EOT|>"
-            ,"<|endoftext|>"]
+    def __init__(self, tokenizer):
+        stop_list = ["<end>", "else"]
         tokenphrases = []
         for token in stop_list:
             tokenphrases.append(
@@ -57,11 +59,16 @@ class DsaiStoppingCriteria(StoppingCriteria):
         self.tokenphrases = tokenphrases
 
     def __call__(
-        self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+            self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
     ) -> bool:
         for tokenphrase in self.tokenphrases:
             if tokenphrase == input_ids[0].tolist()[-len(tokenphrase):]:
                 return True
+
+
+tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=cache_dir)
+stopping_criteria = StoppingCriteriaList([DsaiStoppingCriteria(tokenizer)])
+
 
 def generate_text(prompt, llm_model, tokenizer):
     inputs = tokenizer(prompt, return_tensors="pt")
@@ -79,7 +86,7 @@ def generate_text(prompt, llm_model, tokenizer):
         num_return_sequences=1,
         no_repeat_ngram_size=3,
         pad_token_id=tokenizer.eos_token_id,
-        stopping_criteria=[DsaiStoppingCriteria()],
+        # stopping_criteria=stopping_criteria,
         streamer=streamer
     )
 
@@ -89,7 +96,6 @@ while True:
     if user_question.lower() == 'exit':
         break
     prompt = SUPPORT_ENGINEER.format(question=user_question)
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
     print("start")
     generate_text(prompt, model, tokenizer)
     print("end")
