@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Stream Display</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center the items vertically */
+            justify-content: start; /* Align content to start */
+        }
+        .text-output {
+            width: 90%; /* Adjusted width for better display */
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            overflow-wrap: break-word;
+            white-space: pre-wrap; /* Ensure that text formatting is preserved */
+            height: 300px; /* Fixed height with overflow */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        #questionForm {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <form id="questionForm">
+        <input type="text" id="questionInput" placeholder="Enter your question here">
+        <button type="submit">Submit</button>
+    </form>
+    <div id="output1" class="text-output"></div>
+</div>
+
+<script>
+    document.getElementById('questionForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent the default form submission
+        const question = document.getElementById('questionInput').value;
+        const encodedQuestion = encodeURIComponent(question);
+        const requestURL = `http://localhost:5000/generate-text?question=${encodedQuestion}`;
+
+        // Close any existing EventSource connection
+        if (window.eventSource) {
+            window.eventSource.close();
+        }
+
+        // Initialize a new EventSource connection
+        window.eventSource = new EventSource(requestURL);
+        let fullText = ''; // Reset fullText for new request
+
+        window.eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            // Check if there's text data to append
+            // else if (data.tokens_per_second) {console.log(`Tokens per second: ${data.tokens_per_second}`);}
+            if (data.text) {
+                fullText += data.text; // Append the new text to the full text
+                document.getElementById("output1").innerText = fullText;
+            }
+            else if (data.done) {
+                console.log("Stream ended");
+                console.log(data.text);
+                window.eventSource.close();
+            }
+        };
+    });
+</script>
+</body>
+</html>

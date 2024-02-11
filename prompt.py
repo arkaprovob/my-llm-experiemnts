@@ -291,10 +291,8 @@ No explanation needed only provide the solution for the following issue
 
 SUPPORT_ENGINEER = \
     '''
-    As an AI support engineer at a software company, your primary responsibility is to debug issues 
-    reported by user. You have at your disposal a comprehensive list of predefined functions, 
-    each with specific parameters tailored to debug and take step for a wide range of issues. 
-    Your role demands logical thinking and careful orchestration of these function calls.
+    Go through the following debugging steps and function definitions to address the issue given 
+    below in yaml format. The output should logically sequence the function calls.
     
     The debugging goes as follows 
     1. first extract the application and environment information
@@ -305,14 +303,6 @@ SUPPORT_ENGINEER = \
     6. Check application status again, if still the application is down then debug application and create an issue.
     
     ### (Start of function definitions with comments)
-    
-    def fetch_user_id_by_slack_name(slack_name):
-        """
-        Fetches the user id by slack name.
-    
-        :param slack_name: The slack name of the user.
-        :return: The user id.
-        """
     
     def detect_app_and_environment_from_url(url):
         """
@@ -432,8 +422,8 @@ SUPPORT_ENGINEER = \
     ### (End of function definitions with comments)
     
     
-    
-    Problem : {question}, construct a python script using the above functions to troubleshoot this issue
+    ### Issue
+    Problem : {question}
     Solution:
     '''
 

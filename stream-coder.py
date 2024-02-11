@@ -10,7 +10,8 @@ from prompt import SUPPORT_ENGINEER, SUPPORT_ENGINEER2, SUPPORT_ENGINEER3
 cache_dir = "/media/arko/work/.hfcache"
 # model_id = "upstage/SOLAR-10.7B-Instruct-v1.0"
 # model_id = "Nexusflow/NexusRaven-V2-13B"
-model_id = "deepseek-ai/deepseek-moe-16b-chat"
+# model_id = "deepseek-ai/deepseek-moe-16b-chat"
+model_id = "codellama/CodeLlama-70b-Instruct-hf"
 
 device = "auto"
 trust_remote_code = True

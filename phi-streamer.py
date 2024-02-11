@@ -10,13 +10,33 @@ import time
 model_id = "microsoft/phi-2"
 
 PHI_PROMPT = \
+'''You are now an expert bot specialized in extracting application names and details from URLs. 
+Your task is to extract the application name and details when provided with a URL. For example, 
+given the URL "https://customerportal.qa.google.com/app," you should extract the application name 
+as "customerportal" and the environment as "qa." Similarly, for the URL 
+"https://catalog.stage.redhat.com/hello?q=1," you should extract the application name as 
+"catalog" and the environment as "stage."
+Similarly, for the URL 
+"https://kubebyexample.stage.godaddy.com," you should extract the application name as 
+"kubebyexample" and the environment as "stage."
+
+Your ultimate goal is to provide the application name and environment for any given URL. Remember 
+to extract and present the details accurately. When prompted with a URL, provide the extracted 
+application name and environment in the following format:
+
+Application Name: [name]
+Environment: [environment]
+
+{query}
+Answer:
+'''
+PHI_PROMPT2 = \
 '''
 {query}
 Answer:
 '''
 
-
-device = "cuda:0"
+device = "auto"
 trust_remote_code = True
 cache_dir = "/media/arko/work/.hfcache"
 
@@ -70,7 +90,7 @@ class Phi2StoppingCriteria(StoppingCriteria):
 
 def generate_text(prompt, llm_model, tokenizer):
     inputs = tokenizer(prompt, return_tensors="pt")
-    streamer = TextStreamer(tokenizer)
+    streamer = TextStreamer(tokenizer=tokenizer)
     input_ids = inputs.input_ids.to(llm_model.device)
     attention_mask = inputs.attention_mask.to(llm_model.device)
 
@@ -105,8 +125,7 @@ while True:
     user_question = input("Please enter your question: ")
     if user_question.lower() == 'exit':
         break
-    prompt = PHI_PROMPT.format(query=user_question)
-    #prompt = PHI_PROMPT.format(query="what is your name")
+    prompt = PHI_PROMPT2.format(query=user_question)
     tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=False,cache_dir=cache_dir)
     tps = generate_text(prompt, model, tokenizer)
     print(f"Token generation speed: {tps} tokens/second")
